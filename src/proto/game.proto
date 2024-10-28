@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package game;
+
+
+
+message RegistrationRequest {
+  string username = 1;
+  string display_name = 2;
+}
+
+message RegistrationResponse {
+    bool success = 1;
+    string error = 2;
+}
+
+
+message Request {
+    oneof Request{
+        RegistrationRequest registration_request = 1;
+    }    
+}
+
+message Response {
+    oneof response{
+        RegistrationResponse registration_response = 1;
+    }
+}

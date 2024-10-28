@@ -1,0 +1,50 @@
+{
+    "version": 3,
+    "configurePresets": [
+        { 
+            "name": "common_x64",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        },
+        {
+            "name": "common_x64_debug",
+            "inherits": "common_x64",
+            "binaryDir": "${sourceDir}/build/Debug",
+            "installDir": "${sourceDir}/install/Debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "DebugNinja",
+            "generator": "Ninja",
+            "inherits": "common_x64_debug",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-Og -mavx2 -Wno-ignored-attributes"
+            }
+        },
+        {
+            "name": "common_x64_release",
+            "inherits": "common_x64",
+            "binaryDir": "${sourceDir}/build/Release",
+            "installDir": "${sourceDir}/install/Release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "ReleaseNinja",
+            "generator": "Ninja",
+            "inherits": "common_x64_release",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-mavx2 -Wignored-attributes -fsycl"
+            }
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "myDebug",
+            "inherits": "DebugNinja"
+        },
+        {
+            "name": "myRelease",
+            "inherits": "ReleaseNinja"
+        }
+    ]
+}
