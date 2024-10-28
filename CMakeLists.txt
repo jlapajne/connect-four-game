@@ -22,6 +22,10 @@ find_package(Protobuf REQUIRED)
 
 enable_testing()
 
+
+add_compile_definitions(ASIO_STANDALONE)
+
+include_directories(third_party/websocketpp)
 include_directories(src)
 add_subdirectory(src)
 

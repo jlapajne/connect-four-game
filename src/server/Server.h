@@ -1,22 +1,22 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#ifndef ASIO_STANDALONE
-#define ASIO_STANDALONE
-#endif
-
 #include <functional>
 #include <iostream>
+#include <memory>
 
+#include <asio/post.hpp>
 #include <asio/thread_pool.hpp>
-#include <server/ServerLogic.h>
+
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
-#include <websocketpp/extensions/permessage_deflate/enabled.hpp>
+#include <server/ConnectFourGame.h>
+#include <server/Player.h>
+#include <server/ServerTypes.h>
 
-class Server : public websocketpp::server<websocketpp::config::asio>,
-               public std::enable_shared_from_this<Server> {
+class ServerLogic;
+class Server : public BaseServerType, public std::enable_shared_from_this<Server> {
 
   public:
     struct Params {
@@ -24,34 +24,43 @@ class Server : public websocketpp::server<websocketpp::config::asio>,
         std::size_t maxTaskThreads = 1;
     };
 
-    using ConnectionPtr = websocketpp::connection_hdl;
-
-    Server(Params params)
-        : Server::server<websocketpp::config::asio>(), m_threadPool(params.maxTaskThreads) {
-
-        auto _1 = std::placeholders::_1;
-        auto _2 = std::placeholders::_2;
-
-        this->set_message_handler(std::bind(&Server::on_message, this, _1, _2));
-        this->set_access_channels(websocketpp::log::alevel::all);
-        this->set_error_channels(websocketpp::log::elevel::all);
-
-        this->init_asio();
-        this->listen(params.port);
-        this->start_accept();
-    }
+    Server(Params params);
 
   private:
-    void on_message(ConnectionPtr hdl, Server::message_ptr msg);
+    void onMessage(ConnectionPtr hdl, MessagePtr msg);
 
   private:
-    ServerLogic m_logic;
+    std::unique_ptr<ServerLogic> m_logic;
     asio::thread_pool m_threadPool;
 };
 
-void Server::on_message(ConnectionPtr hdl, Server::message_ptr msg) {
+class ServerLogic {
+  public:
+    ServerLogic(std::shared_ptr<Server> parentPtr) : m_server(std::move(parentPtr)) {}
 
-    // logic.decodeAndProcessRequest(hdl, msg);
-}
+    IPlayer const *addPlayer(std::string const &userName, std::string const &displayName);
+    bool removePlayer(IPlayer *player);
+
+    // clang-format off
+    std::optional<std::shared_ptr<IPlayer>> findPlayer(
+        std::string const &userName, std::string const &displayName);
+    // clang-format on
+
+    GameInstance const *createGameInstance(IPlayer *player1, IPlayer *player2);
+    bool removeGameInstance(GameInstance *game);
+
+    void decodeAndProcessRequest(ConnectionPtr hdl, Server::message_ptr msg);
+
+  private:
+    void sendErrorResponse(std::string const &error, ConnectionPtr hdl);
+
+  private:
+    std::map<IPlayer *, std::shared_ptr<IPlayer>> m_players;
+
+    using GameMap = std::map<GameInstance *, std::shared_ptr<GameInstance>>;
+    std::map<ConnectionPtr, GameMap, std::owner_less<ConnectionPtr>> activeGames;
+
+    std::shared_ptr<Server> m_server;
+};
 
 #endif

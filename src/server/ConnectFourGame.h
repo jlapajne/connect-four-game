@@ -51,8 +51,8 @@ class ConnectFourGame {
 };
 
 struct GameInstance {
-    Player *player1;
-    Player *player2;
+    IPlayer *player1;
+    IPlayer *player2;
 
     ConnectFourGame game;
 };

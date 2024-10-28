@@ -4,7 +4,7 @@ add_library(server
     ConnectFourGame.h
     Player.h
     Server.h
-    ServerLogic.h
+    ServerLogic.cpp
     GameStatistics.h
     )
 

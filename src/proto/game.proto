@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package game;
+package game_proto;
 
 
 
@@ -9,9 +9,12 @@ message RegistrationRequest {
   string display_name = 2;
 }
 
-message RegistrationResponse {
-    bool success = 1;
-    string error = 2;
+message Error {
+    string err = 2;
+}
+
+message Success {
+    string msg =1;
 }
 
 
@@ -23,6 +26,7 @@ message Request {
 
 message Response {
     oneof response{
-        RegistrationResponse registration_response = 1;
+        Error error = 1;
+        Success success = 2;
     }
 }
