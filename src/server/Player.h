@@ -7,6 +7,8 @@
 #include <server/ServerTypes.h>
 #include <websocketpp/server.hpp>
 
+// Interface class for a player. This makes it possible to add
+// different types of players.
 struct IPlayer {
 
     virtual std::string const &getUsername() const = 0;

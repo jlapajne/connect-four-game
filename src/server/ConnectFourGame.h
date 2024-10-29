@@ -51,6 +51,7 @@ class ConnectFourGame {
 };
 
 struct GameInstance {
+    // Player one always starts the game.
     IPlayer *player1;
     IPlayer *player2;
 
