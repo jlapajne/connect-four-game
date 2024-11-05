@@ -3,29 +3,65 @@ syntax = "proto3";
 package game_proto;
 
 
-message RegistrationRequest {
-  string username = 1;
-  string display_name = 2;
+// All messages that server sends have suffix 'response' and all messages 
+// that client sends have suffix 'request'. Semantic may not necessarily 
+// match request-response pattern, since not every response is an answer 
+// for a certain request.
+
+enum ErrorCode {
+    UnknownError = 0;
+    
+    InvalidRequest = 1;
+    //NoOpponentAvailable = 1;
+    //OpponentDisconnected = 2;
+    //InvalidMove = 3;
+    //GameNotFound = 4;
+    //GameAlreadyStarted = 5;
+    //GameAlreadyEnded = 6;
+    //GameAlreadyCancelled = 7;
 }
-message NewGameRequest {
-};
+
+message UserCredentials {
+    string username = 1;
+    string display_name = 2;
+}
+
+message RegistrationRequest {
+    UserCredentials user_credentials = 1;
+}
+
+message LoginRequest {
+    UserCredentials user_credentials = 1;
+}
+
+message NewGameRequest {};
 
 message MoveRequest {
     string game_id = 1;
-    uint32 column = 2;
+    // Zero based indexing.
+    uint32 column_idx = 2;
 };
+
+message MessageRequest {
+    string game_id = 1;
+    string message = 2;
+}
 
 message Request {
     oneof Request{
         RegistrationRequest registration_request = 1;
-        NewGameRequest new_game_request = 2;
+        LoginRequest login_request = 2;
+        NewGameRequest new_game_request = 3;
+        MoveRequest move_request = 4;
+        MessageRequest message_request = 5;
     }    
 }
 
-message Error {
+message ErrorResponse {
+    ErrorCode error_code = 1;
     string msg = 2;
 }
-message Success {
+message SuccessResponse {
 }
 
 message NewGameResponse {
@@ -36,9 +72,37 @@ message NewGameResponse {
     uint32 opponent_rating = 4;
 }
 
+message AvailableMovesResponse {
+    string game_id = 1;
+    repeated uint32 column_idx = 2;
+}
+
+
+enum GameEnd {
+    Win = 0;
+    Draw = 1;
+    Loss = 2;
+    Cancelled = 3;
+}
+
+message GameEndResponse {
+    string game_id = 1;
+    GameEnd game_end = 2;
+}
+
+message MessageResponse {
+    string game_id = 1;
+    string sender_display_name = 2;
+    string message = 3;
+}
+
 message Response {
     oneof response{
-        Error error = 1;
-        NewGameResponse new_game_response = 2;
+        ErrorResponse error = 1;
+        SuccessResponse success = 2;
+        NewGameResponse new_game_response = 3;
+        AvailableMovesResponse available_games_response= 4;
+        GameEndResponse game_end_response = 5;
+        MessageResponse message_response = 6;
     }
 }

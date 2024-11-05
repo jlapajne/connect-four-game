@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 
+#include <server/ConnectionMetadata.h>
 #include <server/ServerTypes.h>
 #include <websocketpp/server.hpp>
 
@@ -20,7 +21,7 @@ struct IPlayer {
     virtual void setHdl(websocketpp::connection_hdl) = 0;
     virtual websocketpp::connection_hdl getHdl() const = 0;
 
-    virtual ConnectionPtr getConnection() const = 0;
+    virtual ConnectionHdl getConnection() const = 0;
     virtual void setConnection(websocketpp::connection_hdl hdl) = 0;
 
     virtual ~IPlayer() = default;
@@ -31,7 +32,7 @@ class Player : public IPlayer {
     struct Params {
         std::string username;
         std::string displayName;
-        websocketpp::connection_hdl hdl;
+        ConnectionHdl hdl;
     };
 
     Player(Params params)
@@ -42,22 +43,25 @@ class Player : public IPlayer {
     std::string const &getUsername() const override { return m_username; }
     std::string const &getDisplayName() const override { return m_displayName; }
     std::uint32_t getRating() const override { return m_rating; }
-    websocketpp::connection_hdl getHdl() const override { return m_hdl; }
+    ConnectionHdl getHdl() const override { return m_hdl; }
 
 
     void setRating(std::uint32_t rating) override { m_rating = rating; }
-    void setHdl(websocketpp::connection_hdl hdl) override { m_hdl = std::move(hdl); }
+    void setHdl(ConnectionHdl hdl) override { m_hdl = std::move(hdl); }
 
-    ConnectionPtr getConnection() const override { return m_hdl; }
-    void setConnection(ConnectionPtr hdl) override { m_hdl = std::move(hdl); }
+    ConnectionHdl getConnection() const override { return m_hdl; }
+    void setConnection(ConnectionHdl hdl) override { m_hdl = std::move(hdl); }
 
     // clang-format on
 
   private:
     std::string m_username;
     std::string m_displayName;
-    ConnectionPtr m_hdl;
+    ConnectionHdl m_hdl;
     std::uint32_t m_rating = 1500;
 };
+
+using PlayerHdl = IPlayer *;
+using PlayerPtr = std::shared_ptr<IPlayer>;
 
 #endif

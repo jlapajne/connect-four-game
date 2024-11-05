@@ -8,28 +8,17 @@ std::uint32_t ConnectFourGame::getFlatIndex(std::uint32_t rowIdx,
                                             std::uint32_t columnIdx) const {
     return rowIdx + columnIdx * RowCount;
 }
-// public getters and setters
-std::span<CoinValue> ConnectFourGame::getColumn(std::uint32_t columnIdx) {
-    assert(columnIdx < ColumnCount);
-    return std::span<CoinValue>(board).subspan(columnIdx * RowCount, RowCount);
-}
 
 std::span<CoinValue const> ConnectFourGame::getColumn(std::uint32_t columnIdx) const {
     assert(columnIdx < ColumnCount);
-    return std::span<CoinValue const>(board).subspan(columnIdx * RowCount, RowCount);
-}
-
-CoinValue &ConnectFourGame::operator()(std::uint32_t rowIdx, std::uint32_t columnIdx) {
-    assert(columnIdx < ColumnCount);
-    assert(rowIdx < RowCount);
-    return board[getFlatIndex(rowIdx, columnIdx)];
+    return std::span<CoinValue const>(m_board).subspan(columnIdx * RowCount, RowCount);
 }
 
 CoinValue const &ConnectFourGame::operator()(std::uint32_t rowIdx,
                                              std::uint32_t columnIdx) const {
     assert(columnIdx < ColumnCount);
     assert(rowIdx < RowCount);
-    return board[getFlatIndex(rowIdx, columnIdx)];
+    return m_board[getFlatIndex(rowIdx, columnIdx)];
 }
 
 void ConnectFourGame::insertCoin(std::uint32_t columnIdx, CoinValue coin) {
@@ -40,33 +29,41 @@ void ConnectFourGame::insertCoin(std::uint32_t columnIdx, CoinValue coin) {
                         columnIdx));
     }
 
-    std::uint32_t rowIdx = columnOccupancy[columnIdx];
+    std::uint32_t rowIdx = m_columnOccupancy[columnIdx];
     if (rowIdx >= RowCount) {
         throw std::runtime_error("Column is already full.");
     }
 
-    columnOccupancy[columnIdx]++;
-    board[getFlatIndex(rowIdx, columnIdx)] = coin;
-    moveCount++;
+    m_columnOccupancy[columnIdx]++;
+    m_board[getFlatIndex(rowIdx, columnIdx)] = coin;
+    m_moveCount++;
+}
+
+void ConnectFourGame::insertPlayerCoin(std::uint32_t columnIdx) {
+    return insertCoin(columnIdx, CoinValue::Player);
+}
+
+void ConnectFourGame::insertOpponentCoin(std::uint32_t columnIdx) {
+    return insertCoin(columnIdx, CoinValue::Opponent);
 }
 
 bool ConnectFourGame::checkIfFourInColumn(std::uint32_t columnIdx) const {
     assert(columnIdx < ColumnCount);
 
-    std::uint32_t rowIdx = columnOccupancy[columnIdx];
+    std::uint32_t rowIdx = m_columnOccupancy[columnIdx];
     assert(rowIdx < RowCount);
 
     if (rowIdx < WinningCoinStreak - 1) {
         return false;
     }
 
-    auto refCoin = board[getFlatIndex(rowIdx, columnIdx)];
+    auto refCoin = m_board[getFlatIndex(rowIdx, columnIdx)];
     assert(refCoin != CoinValue::Empty);
 
     for (std::uint32_t i = 1; i < WinningCoinStreak; ++i) {
         std::uint32_t flatIdx = getFlatIndex(rowIdx - i, columnIdx);
 
-        if (board[flatIdx] != refCoin) {
+        if (m_board[flatIdx] != refCoin) {
             return false;
         }
     }
@@ -76,10 +73,10 @@ bool ConnectFourGame::checkIfFourInColumn(std::uint32_t columnIdx) const {
 bool ConnectFourGame::checkIfFourInRow(std::uint32_t columnIdx) const {
     assert(columnIdx < ColumnCount);
 
-    std::uint32_t rowIdx = columnOccupancy[columnIdx];
+    std::uint32_t rowIdx = m_columnOccupancy[columnIdx];
     assert(rowIdx < RowCount);
 
-    auto refCoin = board[getFlatIndex(rowIdx, columnIdx)];
+    auto refCoin = m_board[getFlatIndex(rowIdx, columnIdx)];
     assert(refCoin != CoinValue::Empty);
 
     std::uint32_t countInRow = 1;
@@ -88,7 +85,7 @@ bool ConnectFourGame::checkIfFourInRow(std::uint32_t columnIdx) const {
 
         std::uint32_t flatIdx = getFlatIndex(rowIdx, c);
 
-        if (board[flatIdx] != refCoin) {
+        if (m_board[flatIdx] != refCoin) {
             break;
         }
         countInRow++;
@@ -98,7 +95,7 @@ bool ConnectFourGame::checkIfFourInRow(std::uint32_t columnIdx) const {
     for (std::uint32_t c = columnIdx - 1;; --c) {
         std::uint32_t flatIdx = getFlatIndex(rowIdx, c);
 
-        if (board[flatIdx] != refCoin) {
+        if (m_board[flatIdx] != refCoin) {
             break;
         }
         countInRow++;
@@ -114,10 +111,10 @@ bool ConnectFourGame::checkIfFourInDiagonal(std::uint32_t columnIdx) const {
 
     assert(columnIdx < ColumnCount);
 
-    std::uint32_t rowIdx = columnOccupancy[columnIdx];
+    std::uint32_t rowIdx = m_columnOccupancy[columnIdx];
     assert(rowIdx < RowCount);
 
-    auto refCoin = board[getFlatIndex(rowIdx, columnIdx)];
+    auto refCoin = m_board[getFlatIndex(rowIdx, columnIdx)];
     assert(refCoin != CoinValue::Empty);
 
     auto checkDiagonal = [&](std::int32_t coeffRow,
@@ -126,7 +123,7 @@ bool ConnectFourGame::checkIfFourInDiagonal(std::uint32_t columnIdx) const {
         for (std::uint32_t i = 1; i < WinningCoinStreak; ++i) {
             std::uint32_t flatIdx =
                 getFlatIndex(rowIdx + i * coeffRow, columnIdx + i * coeffColumn);
-            if (board[flatIdx] != refCoin) {
+            if (m_board[flatIdx] != refCoin) {
                 break;
             }
             countInDiagonal++;
@@ -145,4 +142,15 @@ bool ConnectFourGame::checkIfFourInDiagonal(std::uint32_t columnIdx) const {
 bool ConnectFourGame::checkIfWin(std::uint32_t columnIdx) const {
     return checkIfFourInColumn(columnIdx) || checkIfFourInRow(columnIdx) ||
            checkIfFourInDiagonal(columnIdx);
+}
+
+std::vector<std::uint32_t> ConnectFourGame::getAvailableColumns() const {
+
+    std::vector<std::uint32_t> availableColumns;
+    for (std::uint32_t i = 0; i < ColumnCount; ++i) {
+        if (m_columnOccupancy[i] < RowCount) {
+            availableColumns.push_back(i);
+        }
+    }
+    return availableColumns;
 }

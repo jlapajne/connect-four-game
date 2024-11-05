@@ -1,6 +1,10 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#ifndef ASIO_STANDALONE
+#define ASIO_STANDALONE
+#endif
+
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -14,70 +18,77 @@
 
 #include <game.pb.h>
 #include <server/ConnectFourGame.h>
+#include <server/ConnectionMetadata.h>
+#include <server/GameManager.h>
 #include <server/Player.h>
+#include <server/PlayerManager.h>
 #include <server/ServerTypes.h>
 
 class ServerLogic;
-class Server : public BaseServerType, public std::enable_shared_from_this<Server> {
+class Server : virtual public ServerType, public std::enable_shared_from_this<Server> {
 
   public:
     struct Params {
         std::uint32_t port = 9000;
-        std::size_t maxTaskThreads = 1;
+        std::size_t maxTaskThreads = 10;
     };
 
     Server(Params params);
 
-  private:
-    void onMessage(ConnectionPtr hdl, MessagePtr msg);
+    ConnectionMetadata::Status getConnectionStatus(ConnectionHdl hdl) const;
 
   private:
-    std::unique_ptr<ServerLogic> m_logic;
+    void onMessage(ConnectionHdl hdl, MessagePtr msg);
+    void onConnectionClosed(ConnectionHdl hdl);
+    void onConnectionOpened(ConnectionHdl hdl);
+    ConnectionPtr getConnectionPtr(ConnectionHdl hdl);
+
+  private:
+    ConnectionList m_connectionList;
     asio::thread_pool m_threadPool;
+
+    // pimpl -like implementation of logic.
+    friend class SeverLogic;
+    std::unique_ptr<ServerLogic> m_logic;
 };
 
 class ServerLogic {
   public:
-    ServerLogic(std::shared_ptr<Server> parentPtr) : m_server(std::move(parentPtr)) {}
+    ServerLogic(Server *parentPtr) : m_server(parentPtr) {}
 
-    void decodeAndProcessRequest(ConnectionPtr hdl, Server::message_ptr msg);
+    void decodeAndProcessRequest(ConnectionHdl hdl, MessagePtr msg);
+
+    void onConnectionClosed(ConnectionHdl hdl);
 
   private:
-    IPlayer *addPlayer(std::string const &userName, std::string const &displayName);
-    // clang-format off
-    IPlayer *findPlayer(
-        std::string const &userName, std::string const &displayName);
-    // clang-format on
+    void processProtoRequest(ConnectionHdl hdl, game_proto::Request const &request);
+    void sendProtoMessage(ConnectionHdl hdl, google::protobuf::Message const &message);
+    void sendErrorResponse(ConnectionHdl hdl,
+                           std::string const &error,
+                           std::optional<game_proto::ErrorCode> errorCode = std::nullopt);
 
-    bool addActivePlayer(IPlayer *player);
-    bool removeActivePlayer(IPlayer *player);
-    IPlayer *getActivePlayer(ConnectionPtr hdl);
+    std::optional<std::string>
+    validateUserCredentials(game_proto::UserCredentials const &credentials);
 
-    GameInstance *createGameInstance(IPlayer *player1, IPlayer *player2);
-    bool removeGameInstance(GameInstance *game);
+    void sendSuccessResponse(ConnectionHdl hdl);
 
-    void sendErrorResponse(ConnectionPtr hdl, std::string const &error);
-    void processRegistrationRequest(ConnectionPtr hdl,
+    void
+    sendGameEndResponse(IPlayer *p, std::string const &gameId, game_proto::GameEnd endResult);
+
+    void processRegistrationRequest(ConnectionHdl hdl,
                                     game_proto::RegistrationRequest const &request);
-    void processNewGameRequest(ConnectionPtr hdl, game_proto::NewGameRequest const &request);
-    void sendNewGameResponse(GameInstance *game);
+    void processLoginRequest(ConnectionHdl hdl, game_proto::LoginRequest const &request);
+
+    void processNewGameRequest(ConnectionHdl hdl, game_proto::NewGameRequest const &request);
+    void processMoveRequest(ConnectionHdl hdl, game_proto::MoveRequest const &request);
+    void processMessageRequest(ConnectionHdl hdl, game_proto::MessageRequest const &request);
+
+    PlayerPtr getOpponent(GameHdl Game, PlayerHdl player);
 
   private:
-    std::mutex m_playersMutex;
-    // Player are never removed from this map. Once registered, it's here forever.
-    std::map<IPlayer *, std::shared_ptr<IPlayer>> m_players;
-
-    std::mutex m_activePlayersMutex;
-    // Players with active connection. IPlayer* pointer will always be valid, because this
-    // map is only a subset of the above.
-    std::map<ConnectionPtr, IPlayer *, std::owner_less<ConnectionPtr>> m_activePlayers;
-
-    std::mutex m_gamesMutex;
-    using GameMap = std::map<GameInstance *, std::shared_ptr<GameInstance>>;
-    // Games currently in progress.
-    std::map<ConnectionPtr, GameMap, std::owner_less<ConnectionPtr>> activeGames;
-
-    std::shared_ptr<Server> m_server;
+    PlayerManager m_playerManager;
+    GameManager m_gameManager;
+    Server *m_server;
 };
 
 #endif

@@ -2,3 +2,7 @@
 	path = third_party/websocketpp
 	url = https://github.com/zaphoyd/websocketpp
 	branch = develop
+[submodule "third_party/asio"]
+	path = third_party/asio
+	url = https://github.com/chriskohlhoff/asio
+	branch = master

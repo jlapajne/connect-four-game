@@ -1,15 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 
 
-project(OneApiInfrastructure LANGUAGES CXX)
+project(Connect-4-game LANGUAGES CXX)
 
-
-
-#set(CLANG_COMPILE_OPTIONS -O3 -flto)
-#add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${CLANG_COMPILE_OPTIONS}>")
-
-#add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-O3>")
-#add_link_options("$<$<COMPILE_LANGUAGE:CXX>:-flto>")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -18,14 +11,16 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Protobuf REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 
 enable_testing()
 
-
 add_compile_definitions(ASIO_STANDALONE)
 
 include_directories(third_party/websocketpp)
+
+
 include_directories(src)
 add_subdirectory(src)
 
