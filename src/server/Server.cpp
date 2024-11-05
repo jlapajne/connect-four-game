@@ -16,6 +16,8 @@ Server::Server(Params params) :
     this->set_error_channels(websocketpp::log::elevel::all);
 
     this->init_asio();
+
+    std::cout << "Listening on port " << params.port << std::endl;
     this->listen(params.port);
     this->start_accept();
 }

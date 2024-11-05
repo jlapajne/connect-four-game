@@ -11,7 +11,8 @@
 
 class PlayerManager {
   public:
-    PlayerHdl addPlayer(std::string const &userName, std::string const &displayName);
+    PlayerPtr
+    addPlayer(std::string const &userName, std::string const &displayName, ConnectionHdl hdl);
 
     // clang-format off
     PlayerPtr findPlayer(

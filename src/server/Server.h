@@ -63,6 +63,7 @@ class ServerLogic {
   private:
     void processProtoRequest(ConnectionHdl hdl, game_proto::Request const &request);
     void sendProtoMessage(ConnectionHdl hdl, google::protobuf::Message const &message);
+
     void sendErrorResponse(ConnectionHdl hdl,
                            std::string const &error,
                            std::optional<game_proto::ErrorCode> errorCode = std::nullopt);
@@ -77,7 +78,6 @@ class ServerLogic {
 
     void processRegistrationRequest(ConnectionHdl hdl,
                                     game_proto::RegistrationRequest const &request);
-    void processLoginRequest(ConnectionHdl hdl, game_proto::LoginRequest const &request);
 
     void processNewGameRequest(ConnectionHdl hdl, game_proto::NewGameRequest const &request);
     void processMoveRequest(ConnectionHdl hdl, game_proto::MoveRequest const &request);

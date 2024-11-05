@@ -101,8 +101,6 @@ void ServerLogic::processProtoRequest(ConnectionHdl hdl, game_proto::Request con
 
     if (request.has_registration_request()) {
         return processRegistrationRequest(hdl, request.registration_request());
-    } else if (request.has_login_request()) {
-        return processLoginRequest(hdl, request.login_request());
     } else if (request.has_new_game_request()) {
         return processNewGameRequest(hdl, request.new_game_request());
     } else if (request.has_move_request()) {
@@ -138,38 +136,27 @@ void ServerLogic::processRegistrationRequest(ConnectionHdl hdl,
     if (player) {
         return sendErrorResponse(hdl, "Player already exists.");
     }
-
-    if (!m_playerManager.addPlayer(username, displayName)) {
+    player = m_playerManager.addPlayer(username, displayName, hdl);
+    if (!player) {
         return sendErrorResponse(hdl, "Could not add player.");
     }
 
     if (!m_playerManager.addActivePlayer(player.get())) {
         return sendErrorResponse(hdl, "Could not add active player.");
     }
-}
+    std::cout << std::format("Registered new user with username {:s} and display name {:s}.\n",
+                             username,
+                             displayName);
 
-void ServerLogic::processLoginRequest(ConnectionHdl hdl,
-                                      game_proto::LoginRequest const &request) {
-
-    auto const &credentials = request.user_credentials();
-    if (auto error = validateUserCredentials(credentials)) {
-        sendErrorResponse(hdl, *error);
-    }
-
-    auto const &username = credentials.username();
-    auto const &displayName = credentials.display_name();
-    PlayerPtr player = m_playerManager.findPlayer(username, displayName);
-    if (!player) {
-        return sendErrorResponse(hdl, "Login failed, player does not exist. Please register.");
-    }
-
-    if (!m_playerManager.addActivePlayer(player.get())) {
-        return sendErrorResponse(hdl, "Login failed, could not add active player.");
-    }
+    game_proto::Response response;
+    response.mutable_registration_success_response();
+    sendProtoMessage(hdl, response);
 }
 
 void ServerLogic::processNewGameRequest(ConnectionHdl hdl,
                                         game_proto::NewGameRequest const &request) {
+
+    std::cout << "Received new game request.\n";
 
     PlayerPtr player = m_playerManager.getActivePlayer(hdl);
 
@@ -263,8 +250,8 @@ void ServerLogic::processMoveRequest(ConnectionHdl hdl,
 
         m_gameManager.removeGameInstance(gameInstance);
     } else {
-        // If the player, that made the move, has not won, then we send available moves to the
-        // other player, so that he makes the next move.
+        // If the player, that made the move, has not won, then we send available moves to
+        // the other player, so that he makes the next move.
         game_proto::AvailableMovesResponse &rsp = *response.mutable_available_games_response();
 
         rsp.set_game_id(request.game_id());

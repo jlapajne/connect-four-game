@@ -15,7 +15,7 @@ GameHdl GameManager::createGameInstance(IPlayer *player1, IPlayer *player2) {
 
     auto mappedItem = std::make_pair(game.get(), std::move(game));
 
-    std::lock_guard<std::mutex> const lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     auto [iter1, success1] = m_activeGames[player1->getConnection()].insert(mappedItem);
     auto [iter2, success2] = m_activeGames[player2->getConnection()].insert(mappedItem);
 
@@ -26,7 +26,7 @@ bool GameManager::removeGameInstance(GameHdl game) {
     auto hdl1 = game->player1->getConnection();
     auto hdl2 = game->player2->getConnection();
 
-    std::lock_guard<std::mutex> const lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     return bool(m_activeGames[hdl1].erase(game)) && bool(m_activeGames[hdl2].erase(game));
 }
 
@@ -42,7 +42,7 @@ GameHdl GameManager::getGameFromId(std::string id) {
 }
 
 GamePtr GameManager::getGame(ConnectionHdl conHdl, GameHdl gameHdl) {
-    std::lock_guard<std::mutex> const lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     auto games = m_activeGames.find(conHdl);
 

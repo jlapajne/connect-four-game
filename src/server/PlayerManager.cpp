@@ -10,12 +10,16 @@
 #include <server/Player.h>
 #include <server/RandomUtils.h>
 
-PlayerHdl PlayerManager::addPlayer(std::string const &userName,
-                                   std::string const &displayName) {
-    std::shared_ptr<IPlayer> player = std::make_shared<Player>(
-        Player::Params{.username = userName, .displayName = displayName});
+PlayerPtr PlayerManager::addPlayer(std::string const &userName,
+                                   std::string const &displayName,
+                                   ConnectionHdl hdl) {
+    std::shared_ptr<IPlayer> player = std::make_shared<Player>(Player::Params{
+        .username = userName,
+        .displayName = displayName,
+        .hdl = std::move(hdl),
+    });
 
-    std::lock_guard<std::recursive_mutex> const lock(m_playersMutex);
+    std::lock_guard<std::recursive_mutex> lock(m_playersMutex);
     // Insertion is not thread safe, so we have to ensure only one thread inserts a new player
     // at a time.
     auto [iter, success] = m_players.emplace(player.get(), player);
@@ -23,12 +27,12 @@ PlayerHdl PlayerManager::addPlayer(std::string const &userName,
         return nullptr;
     }
 
-    return iter->first;
+    return iter->second;
 }
 
 PlayerPtr PlayerManager::findPlayer(std::string const &userName,
                                     std::string const &displayName) {
-    std::lock_guard<std::recursive_mutex> const lock(m_playersMutex);
+    std::lock_guard<std::recursive_mutex> lock(m_playersMutex);
     auto iter = std::find_if(m_players.begin(), m_players.end(), [&](auto const &pair) {
         return pair.first->getUsername() == userName &&
                pair.first->getDisplayName() == displayName;
@@ -41,7 +45,7 @@ PlayerPtr PlayerManager::findPlayer(std::string const &userName,
 
 PlayerPtr PlayerManager::getPlayer(PlayerHdl player) {
 
-    std::lock_guard<std::recursive_mutex> const lock(m_playersMutex);
+    std::lock_guard<std::recursive_mutex> lock(m_playersMutex);
     auto playerIter = m_players.find(player);
 
     if (playerIter == m_players.end()) {
@@ -51,18 +55,19 @@ PlayerPtr PlayerManager::getPlayer(PlayerHdl player) {
 }
 
 bool PlayerManager::addActivePlayer(PlayerHdl player) {
-    std::lock_guard<std::recursive_mutex> const lock(m_activePlayersMutex);
-    auto [iter, success] = m_activePlayers.emplace(player->getConnection(), player);
+    std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
+    auto hdl = player->getConnection();
+    auto [iter, success] = m_activePlayers.insert(std::make_pair(hdl, player));
     return success;
 }
 
 bool PlayerManager::removeActivePlayer(PlayerHdl player) {
-    std::lock_guard<std::recursive_mutex> const lock(m_activePlayersMutex);
+    std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
     return bool(m_activePlayers.erase(player->getConnection()));
 }
 
 PlayerPtr PlayerManager::getActivePlayer(ConnectionHdl hdl) {
-    std::lock_guard<std::recursive_mutex> const lock(m_activePlayersMutex);
+    std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
     auto iter = m_activePlayers.find(hdl);
     if (iter == m_activePlayers.end()) {
         return nullptr;
@@ -78,7 +83,7 @@ PlayerPtr PlayerManager::getActivePlayer(ConnectionHdl hdl) {
 }
 
 std::size_t PlayerManager::activePlayerCount() {
-    std::lock_guard<std::recursive_mutex> const lock(m_activePlayersMutex);
+    std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
     return m_activePlayers.size();
 }
 
@@ -88,7 +93,7 @@ PlayerPtr PlayerManager::selectOpponentForPlayer(PlayerHdl player) {
 
     PlayerHdl opponent;
     while (true) {
-        std::lock_guard<std::recursive_mutex> const lock(m_activePlayersMutex);
+        std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
 
         std::size_t nActivePlayers = activePlayerCount();
         auto opponentIter = m_activePlayers.begin();

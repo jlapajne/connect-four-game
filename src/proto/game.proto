@@ -30,9 +30,6 @@ message RegistrationRequest {
     UserCredentials user_credentials = 1;
 }
 
-message LoginRequest {
-    UserCredentials user_credentials = 1;
-}
 
 message NewGameRequest {};
 
@@ -50,7 +47,6 @@ message MessageRequest {
 message Request {
     oneof Request{
         RegistrationRequest registration_request = 1;
-        LoginRequest login_request = 2;
         NewGameRequest new_game_request = 3;
         MoveRequest move_request = 4;
         MessageRequest message_request = 5;
@@ -61,8 +57,9 @@ message ErrorResponse {
     ErrorCode error_code = 1;
     string msg = 2;
 }
-message SuccessResponse {
-}
+message RegistrationSuccessResponse {}
+
+message LoginSuccessResponse {}
 
 message NewGameResponse {
     string game_id = 1;
@@ -99,7 +96,7 @@ message MessageResponse {
 message Response {
     oneof response{
         ErrorResponse error = 1;
-        SuccessResponse success = 2;
+        RegistrationSuccessResponse registration_success_response = 2;
         NewGameResponse new_game_response = 3;
         AvailableMovesResponse available_games_response= 4;
         GameEndResponse game_end_response = 5;

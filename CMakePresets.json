@@ -27,7 +27,7 @@
             "generator": "Ninja",
             "inherits": "common_x64_debug",
             "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "-Og -mavx2 -Wno-ignored-attributes"
+                "CMAKE_CXX_FLAGS": "-ggdb -Wno-ignored-attributes"
             }
         },
         {
@@ -44,7 +44,7 @@
             "generator": "Ninja",
             "inherits": "common_x64_release",
             "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "-mavx2 -Wignored-attributes -fsycl"
+                "CMAKE_CXX_FLAGS": "-O3 -mavx2 -Wignored-attributes -fsycl"
             }
         }
     ]

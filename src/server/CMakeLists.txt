@@ -25,5 +25,5 @@ add_library(server_lib
 
     target_link_libraries(server_lib PUBLIC game_proto SQLite::SQLite3 Threads::Threads)
 
-    add_executable(server main.cpp)
-    target_link_libraries(server server_lib)
+    add_executable(game_server main.cpp)
+    target_link_libraries(game_server server_lib)

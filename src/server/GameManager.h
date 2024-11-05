@@ -14,6 +14,8 @@ class GameManager {
     using GameMap = std::map<GameHdl, GamePtr>;
 
   public:
+    using GameId = std::string;
+
     GameHdl createGameInstance(PlayerHdl player1, PlayerHdl player2);
     bool removeGameInstance(GameHdl game);
     bool removePlayer(ConnectionHdl connection);
