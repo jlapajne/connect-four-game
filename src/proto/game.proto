@@ -34,13 +34,13 @@ message RegistrationRequest {
 message NewGameRequest {};
 
 message MoveRequest {
-    string game_id = 1;
+    uint64 game_id = 1;
     // Zero based indexing.
     uint32 column_idx = 2;
 };
 
 message MessageRequest {
-    string game_id = 1;
+    uint64 game_id = 1;
     string message = 2;
 }
 
@@ -62,7 +62,7 @@ message RegistrationSuccessResponse {}
 message LoginSuccessResponse {}
 
 message NewGameResponse {
-    string game_id = 1;
+    uint64 game_id = 1;
     // Instructs the client to make the first move.
     bool make_first_move = 2;
     string opponent_display_name = 3;
@@ -70,7 +70,7 @@ message NewGameResponse {
 }
 
 message AvailableMovesResponse {
-    string game_id = 1;
+    uint64 game_id = 1;
     repeated uint32 column_idx = 2;
 }
 
@@ -83,12 +83,12 @@ enum GameEnd {
 }
 
 message GameEndResponse {
-    string game_id = 1;
+    uint64 game_id = 1;
     GameEnd game_end = 2;
 }
 
 message MessageResponse {
-    string game_id = 1;
+    uint64 game_id = 1;
     string sender_display_name = 2;
     string message = 3;
 }

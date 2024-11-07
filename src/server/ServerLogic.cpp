@@ -49,9 +49,15 @@ ServerLogic::validateUserCredentials(game_proto::UserCredentials const &credenti
 void ServerLogic::sendProtoMessage(ConnectionHdl hdl,
                                    google::protobuf::Message const &message) {
 
-    std::string msgAsString = message.SerializeAsString();
+    // The standard guarantees this, but let's assert anyway.
+    static_assert(sizeof(char) == 1U, "char must be 1 byte");
+    auto messageSize = message.ByteSizeLong();
+    std::vector<char> payload(messageSize);
+
+    message.SerializeToArray(payload.data(), messageSize);
     try {
-        m_server->send(hdl, msgAsString, websocketpp::frame::opcode::value::text);
+        m_server->send(
+            hdl, payload.data(), messageSize, websocketpp::frame::opcode::value::binary);
 
     } catch (std::exception const &e) {
         std::cerr << e.what() << std::endl;
@@ -134,6 +140,8 @@ void ServerLogic::processRegistrationRequest(ConnectionHdl hdl,
     auto const &displayName = credentials.display_name();
     PlayerPtr player = m_playerManager.findPlayer(username, displayName);
     if (player) {
+        // TODO: We should add a login functionality that will handle cases where the same
+        // player logs in again and continues playing.
         return sendErrorResponse(hdl, "Player already exists.");
     }
     player = m_playerManager.addPlayer(username, displayName, hdl);
@@ -178,6 +186,8 @@ void ServerLogic::processNewGameRequest(ConnectionHdl hdl,
         gameInstance = m_gameManager.createGameInstance(opponent.get(), player.get());
     }
 
+    auto gameId = GameManager::getGameId(gameInstance);
+
     auto prepareResponse = [gameInstance](bool startGame, PlayerHdl opponent) {
         game_proto::Response response;
         auto &newGameResponse = *response.mutable_new_game_response();
@@ -193,7 +203,7 @@ void ServerLogic::processNewGameRequest(ConnectionHdl hdl,
 }
 
 void ServerLogic::sendGameEndResponse(PlayerHdl p,
-                                      std::string const &gameId,
+                                      GameId gameId,
                                       game_proto::GameEnd endResult) {
     // Reponse for the winner.
     game_proto::Response response;
@@ -223,7 +233,7 @@ void ServerLogic::processMoveRequest(ConnectionHdl hdl,
     GamePtr gamePtr = m_gameManager.getGame(hdl, gameInstance);
     if (!gamePtr) {
         return sendErrorResponse(
-            hdl, std::format("Game is not active. Game {:s}.", request.game_id()));
+            hdl, std::format("Game with id {:} is not active.", request.game_id()));
     }
 
     PlayerPtr player = m_playerManager.getActivePlayer(hdl);
@@ -272,7 +282,7 @@ void ServerLogic::processMessageRequest(ConnectionHdl hdl,
     if (!game) {
         return sendErrorResponse(
             hdl,
-            std::format("Message request refused. Game is not active. Game {:s}.", gameId));
+            std::format("Message request refused. Game is not active. Game {:}.", gameId));
     }
 
     PlayerPtr sender = m_playerManager.getActivePlayer(hdl);

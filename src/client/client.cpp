@@ -63,17 +63,6 @@ void Client::messageHandler(ConnectionHdl hdl, MessagePtr msg) {
     bot->processMessage(std::move(msg));
 }
 
-void Client::sendProtoMessage(ConnectionHdl hdl, google::protobuf::Message const &message) {
-
-    std::string msgAsString = message.SerializeAsString();
-    try {
-        send(hdl, msgAsString, websocketpp::frame::opcode::value::text);
-
-    } catch (std::exception const &e) {
-        std::cerr << e.what() << std::endl;
-    }
-}
-
 std::shared_ptr<Bot> Client::makeNewBot(std::string name, std::string const &uri) {
     websocketpp::lib::error_code ec;
     ClientConnectionPtr conPtr = get_connection(uri, ec);

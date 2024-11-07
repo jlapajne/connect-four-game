@@ -47,13 +47,15 @@ class Server : virtual public ServerType, public std::enable_shared_from_this<Se
     ConnectionList m_connectionList;
     asio::thread_pool m_threadPool;
 
-    // pimpl -like implementation of logic.
+    // pimpl-like implementation of logic.
     friend class SeverLogic;
     std::unique_ptr<ServerLogic> m_logic;
 };
 
 class ServerLogic {
   public:
+    using GameId = GameManager::GameId;
+
     ServerLogic(Server *parentPtr) : m_server(parentPtr) {}
 
     void decodeAndProcessRequest(ConnectionHdl hdl, MessagePtr msg);
@@ -73,8 +75,7 @@ class ServerLogic {
 
     void sendSuccessResponse(ConnectionHdl hdl);
 
-    void
-    sendGameEndResponse(IPlayer *p, std::string const &gameId, game_proto::GameEnd endResult);
+    void sendGameEndResponse(IPlayer *p, GameId gameId, game_proto::GameEnd endResult);
 
     void processRegistrationRequest(ConnectionHdl hdl,
                                     game_proto::RegistrationRequest const &request);

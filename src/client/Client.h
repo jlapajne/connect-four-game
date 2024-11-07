@@ -12,6 +12,7 @@
 #include <thread>
 #include <unordered_set>
 
+#include <game.pb.h>
 #include <google/protobuf/message.h>
 
 #include <client/ClientTypes.h>
@@ -29,8 +30,6 @@ class Client : public ClientEndpoint, public std::enable_shared_from_this<Client
     void failHandler(ConnectionHdl hdl);
     void messageHandler(ConnectionHdl hdl, MessagePtr msg);
     void openHandler(ConnectionHdl hdl);
-
-    void sendProtoMessage(ConnectionHdl hdl, google::protobuf::Message const &message);
 
   private:
     using BotList =
@@ -54,8 +53,13 @@ class Bot {
     // Private constructor, because the class can only be constructed through the Client class.
     Bot(Params p);
 
+    void sendProtoMessage(google::protobuf::Message const &message);
+
     void sendRegistrationRequest();
     void sendNewGameRequest();
+    void sendFirstMoveRequest(GameId const &gameId);
+
+    void processNewGameResponse(game_proto::NewGameResponse const &response);
 
     void processMessage(MessagePtr msg);
 

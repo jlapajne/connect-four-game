@@ -30,16 +30,9 @@ bool GameManager::removeGameInstance(GameHdl game) {
     return bool(m_activeGames[hdl1].erase(game)) && bool(m_activeGames[hdl2].erase(game));
 }
 
-std::string GameManager::getGameId(GameHdl game) {
-    static_assert(sizeof(char) == 1U, "char must be 1 byte");
-    char *id = reinterpret_cast<char *>(game);
-    std::string_view idView(id, sizeof(GameHdl));
-    return std::string(idView);
-}
+auto GameManager::getGameId(GameHdl game) -> GameId { return std::size_t(game); }
 
-GameHdl GameManager::getGameFromId(std::string id) {
-    return reinterpret_cast<GameHdl>(id.data());
-}
+GameHdl GameManager::getGameFromId(GameId id) { return reinterpret_cast<GameHdl>(id); }
 
 GamePtr GameManager::getGame(ConnectionHdl conHdl, GameHdl gameHdl) {
     std::lock_guard<std::mutex> lock(m_mutex);

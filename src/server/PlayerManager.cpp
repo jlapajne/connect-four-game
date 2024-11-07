@@ -99,12 +99,14 @@ PlayerPtr PlayerManager::selectOpponentForPlayer(PlayerHdl player) {
         auto opponentIter = m_activePlayers.begin();
 
         // Randomly select the opponent.
-        std::size_t opponentIdx = getRandomInt(nActivePlayers);
+        assert(nActivePlayers > 1);
+        std::size_t opponentIdx = getRandomInt(nActivePlayers - 1);
         std::advance(opponentIter, opponentIdx);
 
         opponent = opponentIter->second;
 
         if (opponent == player) {
+            // Choose another palyer.
             continue;
         }
 

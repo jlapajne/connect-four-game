@@ -19,9 +19,17 @@ enum class CoinValue : std::uint8_t {
 };
 
 class ConnectFourGame {
-
   public:
     enum class Status : std::uint8_t { NotStarted = 0, InProgress = 1, Finished = 2 };
+
+    // 7 columns and 6 rows board.
+    static constexpr std::uint32_t WinningCoinStreak = 4;
+    static constexpr std::uint32_t ColumnCount = 7;
+    static constexpr std::uint32_t RowCount = 6;
+    static constexpr std::uint32_t FlatBoardSize = ColumnCount * RowCount;
+
+  public:
+    // Public methods
 
     std::uint32_t getFlatIndex(std::uint32_t rowIdx, std::uint32_t columnIdx) const;
 
@@ -44,19 +52,15 @@ class ConnectFourGame {
     Status getStatus() const { return m_status; }
 
   private:
+    // Private methods
     void insertCoin(std::uint32_t columnIdx, CoinValue coin);
-
     bool checkIfFourInColumn(std::uint32_t columnIdx) const;
     bool checkIfFourInRow(std::uint32_t columnIdx) const;
     bool checkIfFourInDiagonal(std::uint32_t columnIdx) const;
 
   private:
-    static constexpr std::uint32_t WinningCoinStreak = 4;
-    static constexpr std::uint32_t ColumnCount = 7;
-    static constexpr std::uint32_t RowCount = 6;
-    static constexpr std::uint32_t FlatBoardSize = ColumnCount * RowCount;
-
-    // 7 columns and 6 rows board. Initialize everything to zero.
+    // Private variables.
+    //  Initialize everything to zero.
     std::array<CoinValue, FlatBoardSize> m_board{};
     std::array<std::uint32_t, ColumnCount> m_columnOccupancy{};
     Status m_status = Status::NotStarted;

@@ -14,7 +14,7 @@ class GameManager {
     using GameMap = std::map<GameHdl, GamePtr>;
 
   public:
-    using GameId = std::string;
+    using GameId = std::size_t;
 
     GameHdl createGameInstance(PlayerHdl player1, PlayerHdl player2);
     bool removeGameInstance(GameHdl game);
@@ -26,8 +26,8 @@ class GameManager {
 
   public:
     // These could just as well be standalone functions.
-    static std::string getGameId(GameHdl game);
-    static GameHdl getGameFromId(std::string id);
+    static GameId getGameId(GameHdl game);
+    static GameHdl getGameFromId(GameId id);
 
   private:
     std::mutex m_mutex;
