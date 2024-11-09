@@ -1,10 +1,10 @@
 #ifndef PLAYER_MANAGER_H
 #define PLAYER_MANAGER_H
 
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 
 #include <server/Player.h>
 #include <server/ServerTypes.h>
@@ -12,7 +12,7 @@
 class PlayerManager {
   public:
     PlayerPtr
-    addPlayer(std::string const &userName, std::string const &displayName, ConnectionHdl hdl);
+    addPlayer(std::string const &userName, std::string const &displayName, ConnectionId id);
 
     // clang-format off
     PlayerPtr findPlayer(
@@ -23,7 +23,7 @@ class PlayerManager {
 
     bool addActivePlayer(PlayerHdl player);
     bool removeActivePlayer(PlayerHdl player);
-    PlayerPtr getActivePlayer(ConnectionHdl hdl);
+    PlayerPtr getActivePlayer(ConnectionId id);
 
     std::size_t activePlayerCount();
 
@@ -32,12 +32,12 @@ class PlayerManager {
   private:
     std::recursive_mutex m_playersMutex;
     // Player are never removed from this map. Once registered, it's here forever.
-    std::map<PlayerHdl, PlayerPtr> m_players;
+    std::unordered_map<PlayerHdl, PlayerPtr, std::hash<PlayerHdl>> m_players;
 
     std::recursive_mutex m_activePlayersMutex;
     // Players with active connection. IPlayer* pointer will always be valid, because this
     // map is only a subset of the above.
-    std::map<ConnectionHdl, PlayerHdl, std::owner_less<ConnectionHdl>> m_activePlayers;
+    std::unordered_map<ConnectionId, PlayerHdl> m_activePlayers;
 };
 
 #endif

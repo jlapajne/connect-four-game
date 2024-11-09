@@ -12,11 +12,11 @@
 
 PlayerPtr PlayerManager::addPlayer(std::string const &userName,
                                    std::string const &displayName,
-                                   ConnectionHdl hdl) {
+                                   ConnectionId id) {
     std::shared_ptr<IPlayer> player = std::make_shared<Player>(Player::Params{
         .username = userName,
         .displayName = displayName,
-        .hdl = std::move(hdl),
+        .id = std::move(id),
     });
 
     std::lock_guard<std::recursive_mutex> lock(m_playersMutex);
@@ -56,8 +56,8 @@ PlayerPtr PlayerManager::getPlayer(PlayerHdl player) {
 
 bool PlayerManager::addActivePlayer(PlayerHdl player) {
     std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
-    auto hdl = player->getConnection();
-    auto [iter, success] = m_activePlayers.insert(std::make_pair(hdl, player));
+    auto id = player->getConnection();
+    auto [iter, success] = m_activePlayers.insert(std::make_pair(id, player));
     return success;
 }
 
@@ -66,9 +66,9 @@ bool PlayerManager::removeActivePlayer(PlayerHdl player) {
     return bool(m_activePlayers.erase(player->getConnection()));
 }
 
-PlayerPtr PlayerManager::getActivePlayer(ConnectionHdl hdl) {
+PlayerPtr PlayerManager::getActivePlayer(ConnectionId id) {
     std::lock_guard<std::recursive_mutex> lock(m_activePlayersMutex);
-    auto iter = m_activePlayers.find(hdl);
+    auto iter = m_activePlayers.find(id);
     if (iter == m_activePlayers.end()) {
         return nullptr;
     }

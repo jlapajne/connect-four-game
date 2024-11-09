@@ -34,10 +34,10 @@ auto GameManager::getGameId(GameHdl game) -> GameId { return std::size_t(game); 
 
 GameHdl GameManager::getGameFromId(GameId id) { return reinterpret_cast<GameHdl>(id); }
 
-GamePtr GameManager::getGame(ConnectionHdl conHdl, GameHdl gameHdl) {
+GamePtr GameManager::getGame(ConnectionId id, GameHdl gameHdl) {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    auto games = m_activeGames.find(conHdl);
+    auto games = m_activeGames.find(id);
 
     if (games != m_activeGames.end()) {
         auto gameIter = games->second.find(gameHdl);
@@ -48,13 +48,13 @@ GamePtr GameManager::getGame(ConnectionHdl conHdl, GameHdl gameHdl) {
     return nullptr;
 }
 
-GameManager::GameMap *GameManager::getGames(ConnectionHdl connection) {
+GameManager::GameMap *GameManager::getGames(ConnectionId connection) {
     if (m_activeGames.contains(connection)) {
         return &m_activeGames[connection];
     }
     return nullptr;
 }
 
-bool GameManager::removePlayer(ConnectionHdl connection) {
+bool GameManager::removePlayer(ConnectionId connection) {
     return bool(m_activeGames.erase(connection));
 }

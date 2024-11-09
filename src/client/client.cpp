@@ -35,7 +35,7 @@ void Client::failHandler(ConnectionHdl hdl) {
     }
 
     auto const &bot = botIter->second;
-    auto uriPtr = bot->m_metadata->getUri();
+    auto uriPtr = bot->m_metadata.getUri();
     std::cerr << std::format("Connection to {:s} failed.\n", uriPtr->str());
 }
 
@@ -74,14 +74,14 @@ std::shared_ptr<Bot> Client::makeNewBot(std::string name, std::string const &uri
     auto uriPtr = conPtr->get_uri();
 
     auto handle = conPtr->get_handle();
-    MetadataPtr metadataPtr = make_shared<ConnectionMetadata>(
-        handle, ConnectionMetadata::Status::Connecting, uriPtr);
+    ConnectionMetadata metadata =
+        ConnectionMetadata(handle, ConnectionMetadata::Status::Connecting, uriPtr);
 
     connect(conPtr);
 
     auto bot = std::make_shared<Bot>(Bot(Bot::Params{.name = std::move(name),
                                                      .hdl = handle,
-                                                     .metadata = metadataPtr,
+                                                     .metadata = std::move(metadata),
                                                      .endpoint = shared_from_this()}));
 
     m_botList.insert(std::make_pair(handle, bot));

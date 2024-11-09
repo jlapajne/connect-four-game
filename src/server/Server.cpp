@@ -12,6 +12,9 @@ Server::Server(Params params) :
     auto _2 = std::placeholders::_2;
 
     this->set_message_handler(std::bind(&Server::onMessage, this, _1, _2));
+    this->set_open_handler(std::bind(&Server::onConnectionOpened, this, _1));
+    this->set_close_handler(std::bind(&Server::onConnectionClosed, this, _1));
+
     this->set_access_channels(websocketpp::log::alevel::all);
     this->set_error_channels(websocketpp::log::elevel::all);
 
@@ -32,51 +35,60 @@ void Server::onMessage(ConnectionHdl hdl, MessagePtr msg) {
     // According to this: https://github.com/zaphoyd/websocketpp/issues/62, it is possible to
     // send connection pointer to asio thread (from thread pool) and use it from there. This is
     // what we do.
+
+    ConnectionPtr ptr = getConnectionPtr(hdl);
     asio::post(m_threadPool.get_executor(),
-               [self = shared_from_this(), msg = std::move(msg), hdl = std::move(hdl)]() {
-                   self->m_logic->decodeAndProcessRequest(std::move(hdl), std::move(msg));
+               [self = shared_from_this(), msg = std::move(msg), id = getConnectionId(ptr)]() {
+                   self->m_logic->decodeAndProcessRequest(id, std::move(msg));
                });
 }
 
 void Server::onConnectionClosed(ConnectionHdl hdl) {
 
-    auto connection = m_connectionList.find(hdl);
-    if (connection != m_connectionList.end()) {
-        connection->second->setStatus(ConnectionMetadata::Status::Disconnected);
+    auto ptr = getConnectionPtr(hdl);
+    auto id = getConnectionId(ptr);
+
+    auto connection = m_connections.find(id);
+    if (connection != m_connections.end()) {
+        connection->second.setStatus(ConnectionMetadata::Status::Disconnected);
     } else {
         std::cerr << "Connection that is supposed to be closed, not found!";
     }
 
     asio::post(m_threadPool.get_executor(),
-               [self = shared_from_this(), hdl = std::move(hdl)]() {
-                   self->m_logic->onConnectionClosed(std::move(hdl));
+               [self = shared_from_this(), id = getConnectionId(ptr)]() {
+                   self->m_logic->onConnectionClosed(id);
                });
 }
 
 void Server::onConnectionOpened(ConnectionHdl hdl) {
-    auto connection = m_connectionList.find(hdl);
-    if (connection != m_connectionList.end()) {
+
+    auto connectionPtr = getConnectionPtr(hdl);
+    auto connectionId = getConnectionId(connectionPtr);
+
+    auto connection = m_connections.find(connectionId);
+    if (connection != m_connections.end()) {
         // TODO(implement proper handling of such case).
         std::cerr << "Connection that is supposed to be opened, already exists!"
                      "Not add new connection to the list";
     }
 
-    auto connectionHdl = get_con_from_hdl(hdl);
-    auto uri = connectionHdl->get_uri();
+    auto uri = connectionPtr->get_uri();
 
-    auto [iter1, success1] = m_connectionList.emplace(
-        std::make_pair(hdl,
-                       std::make_shared<ConnectionMetadata>(
-                           hdl, ConnectionMetadata::Status::Connected, uri)));
+    auto [iter, success] = m_connections.emplace(std::make_pair(
+        connectionId, ConnectionMetadata(hdl, ConnectionMetadata::Status::Connected, uri)));
+    if (!success) {
+        std::cerr << "Failed to establish connection to: " << uri->get_port() << std::endl;
+        return;
+    }
 
     std::cout << std::format("Connection opened to: {:d}.", uri->get_port()) << std::endl;
 }
 
-ConnectionMetadata::Status Server::getConnectionStatus(ConnectionHdl hdl) const {
-
-    auto metadata = m_connectionList.find(hdl);
-    if (metadata != m_connectionList.end()) {
-        return metadata->second->getStatus();
+ConnectionMetadata::Status Server::getConnectionStatus(ConnectionId id) const {
+    auto iter = m_connections.find(id);
+    if (iter != m_connections.end()) {
+        return iter->second.getStatus();
     }
     // If connection is not found in the list of connections, then it's disconnected.
     return ConnectionMetadata::Status::Disconnected;

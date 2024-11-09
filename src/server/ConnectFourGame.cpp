@@ -39,12 +39,12 @@ void ConnectFourGame::insertCoin(std::uint32_t columnIdx, CoinValue coin) {
     m_moveCount++;
 }
 
-void ConnectFourGame::insertPlayerCoin(std::uint32_t columnIdx) {
-    return insertCoin(columnIdx, CoinValue::Player);
+void ConnectFourGame::insertPlayer1Coin(std::uint32_t columnIdx) {
+    return insertCoin(columnIdx, CoinValue::Player1);
 }
 
-void ConnectFourGame::insertOpponentCoin(std::uint32_t columnIdx) {
-    return insertCoin(columnIdx, CoinValue::Opponent);
+void ConnectFourGame::insertPlayer2Coin(std::uint32_t columnIdx) {
+    return insertCoin(columnIdx, CoinValue::Player2);
 }
 
 bool ConnectFourGame::checkIfFourInColumn(std::uint32_t columnIdx) const {
@@ -74,6 +74,11 @@ bool ConnectFourGame::checkIfFourInRow(std::uint32_t columnIdx) const {
     assert(columnIdx < ColumnCount);
 
     std::uint32_t rowIdx = m_columnOccupancy[columnIdx];
+    // This function is only called after a coin has been put into a column, so occupancy is
+    // expected to be greater than 0.
+    assert(rowIdx > 0);
+    rowIdx -= 1;
+
     assert(rowIdx < RowCount);
 
     auto refCoin = m_board[getFlatIndex(rowIdx, columnIdx)];
@@ -111,7 +116,7 @@ bool ConnectFourGame::checkIfFourInDiagonal(std::uint32_t columnIdx) const {
 
     assert(columnIdx < ColumnCount);
 
-    std::uint32_t rowIdx = m_columnOccupancy[columnIdx];
+    std::uint32_t rowIdx = m_columnOccupancy[columnIdx] - 1;
     assert(rowIdx < RowCount);
 
     auto refCoin = m_board[getFlatIndex(rowIdx, columnIdx)];

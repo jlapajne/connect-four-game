@@ -24,6 +24,8 @@
 #include <server/PlayerManager.h>
 #include <server/ServerTypes.h>
 
+#pragma optimize("", off)
+
 class ServerLogic;
 class Server : virtual public ServerType, public std::enable_shared_from_this<Server> {
 
@@ -35,7 +37,13 @@ class Server : virtual public ServerType, public std::enable_shared_from_this<Se
 
     Server(Params params);
 
-    ConnectionMetadata::Status getConnectionStatus(ConnectionHdl hdl) const;
+    ConnectionMetadata::Status getConnectionStatus(ConnectionId id) const;
+
+    void sendMessage(ConnectionId id, auto &&...args) {
+        ConnectionHdl hdl = m_connections.at(id).getHdl();
+        // Send is a base class ServerType method.
+        this->send(hdl, std::forward<decltype(args)>(args)...);
+    }
 
   private:
     void onMessage(ConnectionHdl hdl, MessagePtr msg);
@@ -44,8 +52,10 @@ class Server : virtual public ServerType, public std::enable_shared_from_this<Se
     ConnectionPtr getConnectionPtr(ConnectionHdl hdl);
 
   private:
-    ConnectionList m_connectionList;
     asio::thread_pool m_threadPool;
+
+    // Unordered map can not have weak_ptr as a key, so we need additional mapping.
+    std::unordered_map<ConnectionId, ConnectionMetadata> m_connections;
 
     // pimpl-like implementation of logic.
     friend class SeverLogic;
@@ -58,31 +68,31 @@ class ServerLogic {
 
     ServerLogic(Server *parentPtr) : m_server(parentPtr) {}
 
-    void decodeAndProcessRequest(ConnectionHdl hdl, MessagePtr msg);
+    void decodeAndProcessRequest(ConnectionId id, MessagePtr msg);
 
-    void onConnectionClosed(ConnectionHdl hdl);
+    void onConnectionClosed(ConnectionId id);
 
   private:
-    void processProtoRequest(ConnectionHdl hdl, game_proto::Request const &request);
-    void sendProtoMessage(ConnectionHdl hdl, google::protobuf::Message const &message);
+    void processProtoRequest(ConnectionId id, game_proto::Request const &request);
+    void sendProtoMessage(ConnectionId id, google::protobuf::Message const &message);
 
-    void sendErrorResponse(ConnectionHdl hdl,
+    void sendErrorResponse(ConnectionId id,
                            std::string const &error,
                            std::optional<game_proto::ErrorCode> errorCode = std::nullopt);
 
     std::optional<std::string>
     validateUserCredentials(game_proto::UserCredentials const &credentials);
 
-    void sendSuccessResponse(ConnectionHdl hdl);
+    void sendSuccessResponse(ConnectionId id);
 
-    void sendGameEndResponse(IPlayer *p, GameId gameId, game_proto::GameEnd endResult);
+    void sendGameEndResponse(PlayerHdl p, GameId gameId, game_proto::GameEnd result);
 
-    void processRegistrationRequest(ConnectionHdl hdl,
+    void processRegistrationRequest(ConnectionId id,
                                     game_proto::RegistrationRequest const &request);
 
-    void processNewGameRequest(ConnectionHdl hdl, game_proto::NewGameRequest const &request);
-    void processMoveRequest(ConnectionHdl hdl, game_proto::MoveRequest const &request);
-    void processMessageRequest(ConnectionHdl hdl, game_proto::MessageRequest const &request);
+    void processNewGameRequest(ConnectionId id, game_proto::NewGameRequest const &request);
+    void processMoveRequest(ConnectionId id, game_proto::MoveRequest const &request);
+    void processMessageRequest(ConnectionId id, game_proto::MessageRequest const &request);
 
     PlayerPtr getOpponent(GameHdl Game, PlayerHdl player);
 

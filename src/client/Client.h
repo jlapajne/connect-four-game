@@ -46,7 +46,7 @@ class Bot {
     struct Params {
         std::string name;
         ConnectionHdl hdl;
-        MetadataPtr metadata;
+        ConnectionMetadata metadata;
         std::shared_ptr<Client> endpoint;
     };
 
@@ -65,7 +65,7 @@ class Bot {
 
     std::string m_name;
     ConnectionHdl m_hdl;
-    MetadataPtr m_metadata;
+    ConnectionMetadata m_metadata;
     std::unordered_set<GameId> m_games;
     std::shared_ptr<Client> m_endpoint;
 };

@@ -1,9 +1,9 @@
 #ifndef GAME_MANAGER_H
 #define GAME_MANAGER_H
 
-#include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
 #include <server/ConnectFourGame.h>
 #include <server/ConnectionMetadata.h>
@@ -11,18 +11,18 @@
 
 class GameManager {
 
-    using GameMap = std::map<GameHdl, GamePtr>;
-
   public:
     using GameId = std::size_t;
 
     GameHdl createGameInstance(PlayerHdl player1, PlayerHdl player2);
     bool removeGameInstance(GameHdl game);
-    bool removePlayer(ConnectionHdl connection);
+    bool removePlayer(ConnectionId connection);
 
-    GamePtr getGame(ConnectionHdl connection, GameHdl game);
-    GameMap *getGames(ConnectionHdl connection);
+    GamePtr getGame(ConnectionId connection, GameHdl game);
     PlayerPtr getOpponent(GameHdl Game, PlayerHdl player);
+
+    using GameMap = std::map<GameHdl, GamePtr>;
+    GameMap *getGames(ConnectionId connection);
 
   public:
     // These could just as well be standalone functions.
@@ -33,7 +33,7 @@ class GameManager {
     std::mutex m_mutex;
 
     // Games currently in progress.
-    std::map<ConnectionHdl, GameMap, std::owner_less<ConnectionHdl>> m_activeGames;
+    std::unordered_map<ConnectionId, GameMap> m_activeGames;
 };
 
 #endif

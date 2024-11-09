@@ -13,13 +13,16 @@
 
 enum class CoinValue : std::uint8_t {
     Empty = 0,
-    Player = 1,
-    Opponent = 2
+    Player1 = 1,
+    Player2 = 2
 
 };
 
+struct GameInstance;
+
 class ConnectFourGame {
   public:
+    friend class GameInstance;
     enum class Status : std::uint8_t { NotStarted = 0, InProgress = 1, Finished = 2 };
 
     // 7 columns and 6 rows board.
@@ -38,8 +41,8 @@ class ConnectFourGame {
 
     CoinValue const &operator()(std::uint32_t rowIdx, std::uint32_t columnIdx) const;
 
-    void insertPlayerCoin(std::uint32_t columnIdx);
-    void insertOpponentCoin(std::uint32_t columnIdx);
+    void insertPlayer1Coin(std::uint32_t columnIdx);
+    void insertPlayer2Coin(std::uint32_t columnIdx);
 
     bool checkIfWin(std::uint32_t columnIdx) const;
 
@@ -73,6 +76,15 @@ struct GameInstance {
     IPlayer *player2;
 
     ConnectFourGame game;
+
+    void insertCoin(std::uint32_t columnIdx, IPlayer *p) {
+        if (p == player1) {
+            return game.insertPlayer1Coin(columnIdx);
+        } else if (p == player2) {
+            return game.insertPlayer2Coin(columnIdx);
+        }
+        assert(false);
+    }
 };
 
 using GameHdl = GameInstance *;

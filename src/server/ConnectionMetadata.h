@@ -15,8 +15,11 @@
 
 using ConnectionHdl = websocketpp::connection_hdl;
 using ConnectionPtr = ServerType::connection_ptr;
-using HandlePointerPair = std::pair<ConnectionHdl, ConnectionPtr>;
 
+using ConnectionId = std::size_t;
+inline ConnectionId getConnectionId(ConnectionPtr ptr) { return ConnectionId(ptr.get()); }
+
+using HandlePointerPair = std::pair<ConnectionHdl, ConnectionPtr>;
 using UriPtr = std::shared_ptr<websocketpp::uri>;
 
 inline bool operator==(ConnectionHdl a, ConnectionHdl b) { return std::owner_less{}(a, b); }
@@ -46,14 +49,12 @@ class ConnectionMetadata {
     void setStatus(Status status) { m_status = status; }
     Status getStatus() const { return m_status; }
     UriPtr const &getUri() const { return m_uri; }
+    ConnectionHdl getHdl() const { return m_hdl; }
 
   private:
     ConnectionHdl m_hdl;
     Status m_status;
     UriPtr m_uri;
 };
-
-using MetadataPtr = std::shared_ptr<ConnectionMetadata>;
-using ConnectionList = std::map<ConnectionHdl, MetadataPtr, std::owner_less<ConnectionHdl>>;
 
 #endif
