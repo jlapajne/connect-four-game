@@ -4,13 +4,13 @@ package game_proto;
 
 
 // All messages that server sends have suffix 'response' and all messages 
-// that client sends have suffix 'request'. Semantic may not necessarily 
-// match request-response pattern, since not every response is an answer 
-// for a certain request.
+// that client sends have suffix 'request'. It would make sense to also 
+// have notification messages on server side (server sends them).
+// Semantic may not necessarily match request-response pattern, since not 
+// every response is an answer for a certain request.
 
 enum ErrorCode {
     UnknownError = 0;
-    
     InvalidRequest = 1;
     //NoOpponentAvailable = 1;
     //OpponentDisconnected = 2;

@@ -125,9 +125,20 @@ bool ConnectFourGame::checkIfFourInDiagonal(std::uint32_t columnIdx) const {
     auto checkDiagonal = [&](std::int32_t coeffRow,
                              std::int32_t coeffColumn) -> std::uint32_t {
         std::uint32_t countInDiagonal = 0;
-        for (std::uint32_t i = 1; i < WinningCoinStreak; ++i) {
-            std::uint32_t flatIdx =
-                getFlatIndex(rowIdx + i * coeffRow, columnIdx + i * coeffColumn);
+        for (std::int32_t i = 1; i < WinningCoinStreak; ++i) {
+
+            std::int32_t column = columnIdx + i * coeffColumn;
+            if (column < 0 || column >= ColumnCount) {
+                break;
+            }
+
+            std::uint32_t row = rowIdx + i * coeffRow;
+            if (row < 0 || row >= RowCount) {
+                break;
+            }
+
+            std::uint32_t flatIdx = getFlatIndex(row, column);
+
             if (m_board[flatIdx] != refCoin) {
                 break;
             }

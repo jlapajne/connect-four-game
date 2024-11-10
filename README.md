@@ -4,8 +4,8 @@ Game utilizing server client architecture using websocketpp library. The library
 Server side processes client messages asynchronously using asio thread pool, while client side message / tasks are processed sequentially.
 
 ##### Build:
-Currently build system consists of Cmake (>3.2) and Ninja.
-- cmake
+Currently build system consists of Cmake (>3.20) and Ninja.
+TODO...
 
 
 ##### Dependencies:
@@ -18,6 +18,7 @@ Currently build system consists of Cmake (>3.2) and Ninja.
 
 ##### TODOs:
 - bug fixes,
+- fix clang format file (currently some strange formatting happens),
 - doxygen,
 - asynchronous processing on client side,
 - general code improvements and clean-up.
