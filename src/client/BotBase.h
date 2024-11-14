@@ -11,7 +11,9 @@
 #include <client/Client_fwd.h>
 #include <client/IBot.h>
 
-struct BotBase : public IBot {
+class BotBase : public IBot {
+
+  public:
     friend class Client;
 
     virtual ~BotBase() = default;
@@ -35,6 +37,7 @@ struct BotBase : public IBot {
     ConnectionMetadata const &getConnectionMetadata() const override { return m_metadata; }
     std::string const &getName() const override { return m_name; }
 
+  private:
     std::string m_name;
     ConnectionMetadata m_metadata;
     std::unordered_set<GameId> m_games;

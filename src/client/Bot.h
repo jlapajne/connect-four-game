@@ -26,15 +26,15 @@ std::shared_ptr<IBot> makeNewBot(BotType type,
                                  ConnectionMetadata metadata,
                                  std::shared_ptr<Client> endpoint);
 
-struct RandomBot : public BotBase {
+class RandomBot : public BotBase {
     using Params = BotBase::Params;
 
-    friend class Client;
     friend std::shared_ptr<IBot> makeNewBot(BotType type,
                                             std::string name,
                                             ConnectionMetadata metadata,
                                             std::shared_ptr<Client> endpoint);
 
+  public:
     // Private constructor, because the class can only be constructed through the Client class.
     RandomBot(Params p);
 
